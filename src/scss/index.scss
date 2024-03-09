@@ -1,0 +1,16 @@
+@import 'bootstrap/scss/bootstrap';
+
+.center {
+    position: relative;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+
+#main {
+    height: min-content;
+    z-index: 3;
+    overflow: hidden;
+    overflow-y: scroll;
+    text-align: center;
+}

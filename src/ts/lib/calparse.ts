@@ -6,14 +6,12 @@ const daysInMonth = (year: number, month: number) => {
 };
 const hasAny = (straw: string, ...finds: string[]) => {
     let str = straw.toLowerCase();
-    let hasit = false;
     for (let i of finds) {
         if (str.includes(i)) {
-            hasit = true;
-            break;
+            return true;
         }
     }
-    return hasit;
+    return false;
 };
 
 const createStandard = async (ptgms: string, name: string, start: Date): Promise<string> => {
@@ -25,7 +23,7 @@ const createStandard = async (ptgms: string, name: string, start: Date): Promise
                 "title": `${name} has lunch`,
                 "start": [i.start.getFullYear(), i.start.getMonth() + 1, i.start.getUTCDate()],
                 "duration": { days: 1 },
-                "description": (new DOMParser().parseFromString(`<html><head></head><body><div id="desc">${i.description}</div></body></html>`, "text/html")).getElementById("desc").textContent
+                "description": (new DOMParser().parseFromString(`<html><head></head><body><div id="desc">${i.description}</div></body></html>`, "text/html")).getElementById("desc").textContent.trim()
             });
         }
     }
@@ -38,7 +36,7 @@ const createStandard = async (ptgms: string, name: string, start: Date): Promise
     });
 };
 
-const createAnti = async (standard: string, ptgms: string, name: string, start: Date, end: Date): Promise<string> => {
+const createAnti = async (standard: string, name: string, start: Date, end: Date): Promise<string> => {
     let ogCal = await parseICS(standard);
     let ogMap = new Map();
 
@@ -63,7 +61,9 @@ const createAnti = async (standard: string, ptgms: string, name: string, start: 
     let evts: EventAttributes[] = [];
     let year = end.getFullYear();
 
-    for (let mo = start.getMonth(); mo <= end.getMonth(); ++mo) {
+    for (let i = start.getMonth() + start.getFullYear() * 12; i <= end.getMonth() + end.getFullYear() * 12; ++i) {
+        let mo = i % 12;
+        let year = (i - mo) / 12;
         for (let day = ((mo == start.getMonth()) ? start.getDate() : 1); day <= ((mo == end.getMonth()) ? end.getDate() : daysInMonth(end.getFullYear(), mo)); ++day) {
             if (new Date(year, mo, day).getDay() == 0 || new Date(year, mo, day).getDay() == 6) {
                 console.log("weekend for", `${year}.${mo + 1}.${day}`);
@@ -78,7 +78,7 @@ const createAnti = async (standard: string, ptgms: string, name: string, start: 
                 let hasDessert = false;
                 let hasEntree = false;
                 for (let i of ogMap.get(`${year}.${mo + 1}.${day}`)) {
-                    if (hasAny(((true) ? i.description : i.description.split(", ")[0]), "donut", "blizzard", "frozen yogurt")) {
+                    if (hasAny(i.description, "donut", "blizzard", "frozen yogurt", "concrete mixer")) {
                         hasDessert = true;
                     } else {
                         hasEntree = true;
@@ -118,7 +118,7 @@ export interface FullCal {
 
 export default async function makeIcs(ptgms: string, name: string, start: Date, end: Date): Promise<FullCal> {
     let standard = await createStandard(ptgms, name, start);
-    let anti = await createAnti(standard, ptgms, name, start, end);
+    let anti = await createAnti(standard, name, start, end);
 
     return { standard, anti };
 }
